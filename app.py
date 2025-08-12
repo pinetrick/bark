@@ -10,22 +10,21 @@ from typing import Optional
 
 app = FastAPI()
 
-# 选GPU（有则用，没有用CPU）
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 processor = AutoProcessor.from_pretrained("suno/bark")
 model = BarkModel.from_pretrained("suno/bark").to(device)
-model.eval()  # 推理模式，节省显存和加速
+model.eval()
 
 class TTSRequest(BaseModel):
     text: str
-    voice_preset: Optional[str] = "v2/en_speaker_6"  # 新增字段，默认值
+    voice_preset: Optional[str] = "v2/en_speaker_6"
 
 @app.post("/tts")
 async def tts(request: TTSRequest):
-    voice_preset = request.voice_preset  # 从请求体里获取，保证存在
-    inputs = processor(request.text, voice_preset=voice_preset, return_tensors="pt", padding=True)
+    voice_preset = request.voice_preset
+    inputs = processor(request.text, voice_preset=voice_preset, return_tensors="pt")
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
     with torch.no_grad():
