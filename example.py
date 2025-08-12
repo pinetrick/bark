@@ -16,11 +16,21 @@ class TTSRequest(BaseModel):
 
 @app.post("/tts")
 async def tts(request: TTSRequest):
-    audio_array = generate_audio(request.text)
-
+    # 将长文本分段处理
+    segment_length = 1000  # 每段的字符长度
+    segments = [request.text[i:i+segment_length] for i in range(0, len(request.text), segment_length)]
+    
+    audio_pieces = []
+    for segment in segments:
+        audio_array = generate_audio(segment)
+        audio_pieces.append(audio_array)
+    
+    # 合并音频片段
+    full_audio = np.concatenate(audio_pieces)
+    
     # 转wav写入内存
     wav_io = io.BytesIO()
-    sf.write(wav_io, audio_array, samplerate=SAMPLE_RATE, subtype='PCM_16', format='WAV')
+    sf.write(wav_io, full_audio, samplerate=SAMPLE_RATE, subtype='PCM_16', format='WAV')
     wav_io.seek(0)
 
     # wav -> mp3
