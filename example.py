@@ -5,6 +5,7 @@ from bark import SAMPLE_RATE, generate_audio, preload_models
 import torch
 from pydub import AudioSegment
 import soundfile as sf
+import numpy as np
 
 app = FastAPI()
 
