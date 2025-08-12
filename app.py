@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Response
 from pydantic import BaseModel
 from transformers import AutoProcessor, BarkModel
 import torch
@@ -9,9 +9,13 @@ import uvicorn
 
 app = FastAPI()
 
+# 选GPU（有则用，没有用CPU）
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
 processor = AutoProcessor.from_pretrained("suno/bark")
 model = BarkModel.from_pretrained("suno/bark").to(device)
+model.eval()  # 切换推理模式，节省显存和加速
 
 class TTSRequest(BaseModel):
     text: str
@@ -19,11 +23,13 @@ class TTSRequest(BaseModel):
 @app.post("/tts")
 async def tts(request: TTSRequest):
     voice_preset = "v2/en_speaker_6"
-    
+
     inputs = processor(request.text, voice_preset=voice_preset, return_tensors="pt")
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
-    audio_array = model.generate(**inputs)
+    with torch.no_grad():  # 关闭梯度，加快推理速度
+        audio_array = model.generate(**inputs)
+
     audio_array = audio_array.cpu().numpy().squeeze()
 
     wav_io = io.BytesIO()
