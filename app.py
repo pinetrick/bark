@@ -22,12 +22,11 @@ class TTSRequest(BaseModel):
 
 @app.post("/tts")
 async def tts(request: TTSRequest):
-    voice_preset = "v2/en_speaker_6"
-
-    inputs = processor(request.text, voice_preset=voice_preset, return_tensors="pt")
+    voice_preset = request.voice_preset  # 从请求里获取
+    inputs = processor(request.text, voice_preset=voice_preset, return_tensors="pt", padding=True)
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
-    with torch.no_grad():  # 关闭梯度，加快推理速度
+    with torch.no_grad():
         audio_array = model.generate(**inputs)
 
     audio_array = audio_array.cpu().numpy().squeeze()
