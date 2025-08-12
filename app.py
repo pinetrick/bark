@@ -33,7 +33,7 @@ async def tts(request: TTSRequest):
     audio_array = audio_array.cpu().numpy().squeeze()
 
     wav_io = io.BytesIO()
-    sf.write(wav_io, audio_array, samplerate=24000, subtype='PCM_16')
+    sf.write(wav_io, audio_array, samplerate=24000, subtype='PCM_16', format='WAV')
     wav_io.seek(0)
 
     audio = AudioSegment.from_wav(wav_io)
