@@ -6,6 +6,7 @@ import soundfile as sf
 from pydub import AudioSegment
 import io
 import uvicorn
+from typing import Optional
 
 app = FastAPI()
 
@@ -15,14 +16,15 @@ print(f"Using device: {device}")
 
 processor = AutoProcessor.from_pretrained("suno/bark")
 model = BarkModel.from_pretrained("suno/bark").to(device)
-model.eval()  # 切换推理模式，节省显存和加速
+model.eval()  # 推理模式，节省显存和加速
 
 class TTSRequest(BaseModel):
     text: str
+    voice_preset: Optional[str] = "v2/en_speaker_6"  # 新增字段，默认值
 
 @app.post("/tts")
 async def tts(request: TTSRequest):
-    voice_preset = request.voice_preset  # 从请求里获取
+    voice_preset = request.voice_preset  # 从请求体里获取，保证存在
     inputs = processor(request.text, voice_preset=voice_preset, return_tensors="pt", padding=True)
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
